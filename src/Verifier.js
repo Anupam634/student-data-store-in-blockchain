@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Web3 from 'web3';
 import { Worker, Viewer } from '@react-pdf-viewer/core';
 import '@react-pdf-viewer/core/lib/styles/index.css';
@@ -13,9 +13,35 @@ const Verifier = () => {
   const [loading, setLoading] = useState(false);
   const [validationMessage, setValidationMessage] = useState('');
   const [certificateDetails, setCertificateDetails] = useState({});
+  const [account, setAccount] = useState(null);
 
-  // Web3 setup using window.ethereum
-  const web3 = new Web3(window.ethereum);
+  // Web3 setup with a placeholder, updated after MetaMask connects
+  const [web3, setWeb3] = useState(new Web3(Web3.givenProvider));
+
+  // Connect to MetaMask
+  const connectMetaMask = async () => {
+    if (window.ethereum) {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        setAccount(accounts[0]);
+        setWeb3(new Web3(window.ethereum));
+        console.log('Connected account:', accounts[0]);
+      } catch (error) {
+        console.error('Connection to MetaMask failed:', error);
+      }
+    } else {
+      alert('MetaMask is not installed. Please install it to use this DApp.');
+    }
+  };
+
+  // Listen for account change
+  useEffect(() => {
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', (accounts) => {
+        setAccount(accounts[0]);
+      });
+    }
+  }, []);
 
   // Handle file upload
   const handleFileUpload = (e) => {
@@ -120,6 +146,13 @@ const Verifier = () => {
   return (
     <div>
       <h2>Verifier: Validate Certificate</h2>
+
+      {/* MetaMask connection section */}
+      <div>
+        <button onClick={connectMetaMask}>
+          {account ? `Connected: ${account}` : 'Connect MetaMask'}
+        </button>
+      </div>
 
       <div>
         <h3>Verify Certificate using PDF</h3>
