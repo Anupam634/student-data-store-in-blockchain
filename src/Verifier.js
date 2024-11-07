@@ -14,7 +14,7 @@ const Verifier = () => {
   const [validationMessage, setValidationMessage] = useState('');
   const [certificateDetails, setCertificateDetails] = useState({});
 
-  // Web3 setup
+  // Web3 setup using window.ethereum
   const web3 = new Web3(window.ethereum);
 
   // Handle file upload
@@ -26,13 +26,11 @@ const Verifier = () => {
     }
   };
 
-  // Extract certificate data (Stubbed, replace with real extraction or backend call)
+  // Extract certificate data (stubbed, replace with real extraction or backend call)
   const extractCertificateData = (file) => {
     return new Promise((resolve, reject) => {
       axios.post('/api/extract_certificate', { file })
-        .then(response => {
-          resolve(response.data);
-        })
+        .then(response => resolve(response.data))
         .catch(err => reject(err));
     });
   };
@@ -50,7 +48,6 @@ const Verifier = () => {
 
       if (result) {
         setValidationMessage('Certificate validated successfully!');
-        // Fetch full certificate details
         const certificateData = await contract.methods.getCertificate(certificateId).call();
         const certificateDetails = {
           uid: certificateData[0],
@@ -81,7 +78,6 @@ const Verifier = () => {
       const extractedData = await extractCertificateData(certificateFile);
       const { uid, candidateName, courseName, orgName, cgpa } = extractedData;
 
-      // Create certificate ID from extracted data
       const dataToHash = `${uid}${candidateName}${courseName}${orgName}${cgpa}`;
       const certificateId = web3.utils.sha3(dataToHash);
       setCertificateId(certificateId);
@@ -90,7 +86,6 @@ const Verifier = () => {
       const result = await contract.methods.isVerified(certificateId).call();
       setValidationMessage(result ? 'Certificate validated successfully!' : 'Invalid Certificate! Certificate might be tampered.');
 
-      // Fetch full certificate details
       if (result) {
         const certificateData = await contract.methods.getCertificate(certificateId).call();
         const certificateDetails = {
@@ -112,8 +107,6 @@ const Verifier = () => {
   // Generate PDF with certificate details
   const generateCertificatePDF = () => {
     const doc = new jsPDF();
-
-    // Add certificate details to the PDF
     doc.text("Certificate Details", 10, 10);
     doc.text(`UID: ${certificateDetails.uid}`, 10, 20);
     doc.text(`Candidate Name: ${certificateDetails.candidateName}`, 10, 30);
@@ -121,8 +114,6 @@ const Verifier = () => {
     doc.text(`Organization: ${certificateDetails.orgName}`, 10, 50);
     doc.text(`CGPA: ${certificateDetails.cgpa}`, 10, 60);
     doc.text(`IPFS Hash: ${certificateDetails.ipfsHash}`, 10, 70);
-
-    // Save the PDF
     doc.save("certificate_details.pdf");
   };
 
